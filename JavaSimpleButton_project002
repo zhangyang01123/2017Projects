@@ -1,0 +1,415 @@
+import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import javax.swing.JSpinner;
+import javax.swing.JFrame;
+import javax.swing.SpinnerDateModel;
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.*;
+import javax.swing.event.*;
+import javax.swing.Timer;
+import java.applet.Applet;
+import java.applet.AudioClip;
+import java.awt.Container;
+import java.awt.GridLayout;
+import java.io.File;
+import java.net.MalformedURLException;
+import javax.swing.*;
+
+
+
+public class Clock  implements MouseListener ,ChangeListener{
+	ClockPanel  cpanel;
+	public ClockSpinner cspinner;
+	Calendar  mycal;
+	JFrame  cframe;
+    int  k=0;
+    Timer 	manager;
+    Alarm s;
+
+	public Clock()
+	{
+		JButton alarmSetting;
+		JButton stopAlarm;
+		s = null;
+		this.mycal=Calendar.getInstance();
+		this.cpanel=new ClockPanel(this.mycal);
+		this.cspinner=new ClockSpinner(this.mycal);
+        cframe=new JFrame("时钟界面");
+        this.cspinner.addChangeListener(this);
+        this.cframe.addMouseListener(this);
+        this.cpanel.addMouseListener(this);
+        this.cframe.setBounds(300, 300, 300, 300);
+        this.cframe.getContentPane().add(cpanel);
+        JPanel  panel=new JPanel();       
+        panel.add(cspinner);
+        
+        alarmSetting = new JButton("打开闹铃设置");
+        panel.add(alarmSetting);
+        alarmSetting.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				if(s == null){
+					s = new Alarm();
+					Thread t1 = new Thread(s);
+					t1.start();
+					s.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE );
+				}
+				else{
+					s.setVisible(true);
+					s.setState(JFrame.NORMAL);
+				}
+				
+			}
+		});
+        
+        // in case user does not want to open alarm setting again, just click this button to stop the alarm.
+        stopAlarm = new JButton("停止闹钟");
+        panel.add(stopAlarm);
+        stopAlarm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				if(s != null){
+					s.StopAlarm();
+				}
+			}
+		}); 
+        
+        this.cframe.getContentPane().add(panel, "South");
+        this.cframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.cframe.setVisible(true);        
+        ActionListener ac=new ActionListener()
+        {
+	
+	       public void actionPerformed(ActionEvent e)
+	       {
+		        cspinner.nextvalue();
+		        cpanel.repaintp(cspinner.getvalue());
+	       }
+        };
+        this.manager=new Timer(1000,ac);
+        manager.start();    
+	}
+	public void stateChanged(ChangeEvent e)
+	{
+		if (k==0)
+	     cpanel.repaintp(cspinner.getvalue());
+	}
+	public void mouseClicked(MouseEvent e)
+	{
+		k=(k+1)%2;
+		if (k==0)
+			this.manager.stop();
+		else 
+			this.manager.start();
+	}
+	public void mousePressed(MouseEvent e){}
+	public void mouseReleased(MouseEvent e){}
+	public void mouseEntered(MouseEvent e){}
+	public void mouseExited(MouseEvent e){}
+	public static void main(String args[]){
+	new Clock();
+	}
+}
+
+
+class ClockPanel extends Canvas{
+	Calendar  pcal;
+	int x,y,x0,y0,r,h,olds_x,olds_y,oldm_x,oldm_y,oldh_x,oldh_y,ss,mm,hh,old_m,old_h,ang;
+	final double RAD=Math.PI/180; 
+	public ClockPanel(Calendar cal)
+	{
+		this.pcal=cal;
+	}
+    public void paint(Graphics g)
+    {
+    	Graphics2D g2D = (Graphics2D)g;        
+        g.setXORMode(this.getBackground());
+        h = getSize().height;
+        g.setColor(Color.BLACK);
+        r=h/2-30;
+        
+       
+        
+        x0=this.getWidth()/2;
+        y0=this.getHeight()/2;
+        ang=60;
+        
+        //绘制时钟上的12个数字
+        for(int i=1;i<=12;i++)
+        {
+            x=(int)((r-10)*Math.cos(RAD*ang)+x0);
+            y=(int)((r-10)*Math.sin(RAD*ang)+y0);
+            g.drawString(""+i,x,h-y);
+            ang-=30;
+        	}
+        
+        //获得当前系统时间
+       
+        //int nowh= now.get(Calendar.HOUR_OF_DAY);
+        int nowh= this.pcal.get(Calendar.HOUR)%12;
+        int nowm= this.pcal.get(Calendar.MINUTE);
+        int nows= this.pcal.get(Calendar.SECOND);
+      
+        
+    
+        ss=90-nows*6;
+        mm=90-nowm*6;
+        hh=90-nowh*30-nowm/2;
+        
+        
+        g2D.setStroke(new BasicStroke(1.0f));
+        if(olds_x>0)
+        {
+            g.setColor(getBackground());
+            g.drawLine(x0,y0,olds_x,h-olds_y);
+        }
+       else
+       {
+            old_m = mm;
+            old_h = hh;
+        }
+      //绘制秒针
+        x=(int)(r*0.9*Math.cos(RAD*ss))+x0;//长度
+        y=(int)(r*0.9*Math.sin(RAD*ss))+y0;
+        g.setColor(Color.black);//指针颜色
+        g.drawLine(x0,y0,x,h-y);//轨迹
+        olds_x=x;
+        olds_y=y;
+        
+        g2D.setStroke(new BasicStroke(2.2f));//分针粗细
+      //擦除分针
+        if(old_m!=mm)
+        {
+            g.setColor(getBackground());
+            g.drawLine(x0,y0,oldm_x,h-oldm_y);
+        }
+        //绘制分针
+        x=(int)(r*0.7*Math.cos(RAD*mm))+x0;//长度
+        y=(int)(r*0.7*Math.sin(RAD*mm))+y0;
+        g.setColor(Color.red);//颜色
+        g.drawLine(x0,y0,x,h-y);
+        oldm_x=x;
+        oldm_y=y;
+        old_m=mm;
+        
+        g2D.setStroke(new BasicStroke(3.4f));//时针粗细
+        //擦除时针
+        if(old_h!=hh)
+        	   {
+            g.setColor(getBackground());
+            g.drawLine(x0,y0,oldh_x,h-oldh_y);
+            }
+        //绘制时针
+        x=(int)(r*0.5*Math.cos(RAD*hh))+x0;//长度
+        y=(int)(r*0.5*Math.sin(RAD*hh))+y0;
+        g.setColor(Color.red);//颜色
+        g.drawLine(x0,y0,x,h-y);
+        oldh_x=x;
+        oldh_y=y;
+        old_h=hh;
+    	  
+    }
+    public void repaintp(Calendar cal)
+    {
+    	this.pcal=cal;
+    	
+    	this.repaint();
+    }
+ 
+}
+class ClockSpinner extends JSpinner {
+	Calendar scal;
+	SpinnerDateModel smodel;
+	DateFormat  timemodel=new SimpleDateFormat("HH:mm:ss");
+	public ClockSpinner(Calendar cal) 
+	{
+		this.scal=cal;
+		String time=timemodel.format(scal.getTime());
+		try
+		{
+		this.smodel=new SpinnerDateModel(timemodel.parse(time),null,null,Calendar.SECOND);
+		} 
+        catch (ParseException e1) 
+        {
+            e1.printStackTrace();
+        }
+		this.setModel(smodel);
+		this.setEditor(new JSpinner.DateEditor(this,"HH:mm:ss"));		
+	}
+	public void nextvalue()
+	{
+		smodel.setCalendarField(Calendar.SECOND);
+		Object ob1=smodel.getNextValue();
+		smodel.setValue(ob1);		
+	}
+	public Calendar  getvalue()
+	{
+		Object ob1=smodel.getNextValue();
+		String time=ob1.toString();
+		int x=time.indexOf(':');
+		Date  dat=new Date();
+		try
+		{
+		dat=timemodel.parse(time.substring(x-2, x+6));		
+		} 
+        catch (ParseException e1) 
+        {
+            e1.printStackTrace();
+        }
+		this.scal.setTime(dat);
+		return this.scal;		
+	}
+
+}
+
+class Alarm extends JFrame implements Runnable {
+	JLabel ri ,shi, fen, miao, dangqian;
+	JButton queding, dakai;
+	JTextField music,RI, SHI, FEN, MIAO;
+	int h=0,f=0,m=0,r=0;
+	boolean fo=false;
+	public AudioClip soumd1;
+
+	public Alarm() {
+		Container c = getContentPane();
+		c.setLayout(new GridLayout(3, 1));
+		JPanel jp = new JPanel();
+		dangqian = new JLabel();
+		jp.add(dangqian);
+		c.add(jp);
+		JPanel jp1 = new JPanel();
+		music = new JTextField(20);
+		dakai = new JButton("选择闹铃音乐");
+		jp1.add(music);
+		jp1.add(dakai);
+		c.add(jp1);
+		ri = new JLabel("日");
+		RI = new JTextField(4);
+		shi = new JLabel("时");
+		SHI = new JTextField(4);
+		fen = new JLabel("分");
+		FEN = new JTextField(4);
+		miao = new JLabel("秒");
+		MIAO = new JTextField(4);
+		JPanel jp2 = new JPanel();
+		jp2.add(ri);
+		jp2.add(RI);
+		jp2.add(shi);
+		jp2.add(SHI);
+		jp2.add(fen);
+		jp2.add(FEN);
+		jp2.add(miao);
+		jp2.add(MIAO);
+		queding = new JButton("确定");
+		jp2.add(queding);
+		c.add(jp2);
+		setSize(400, 130);
+		setVisible(true);
+		dakai.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				JFileChooser fileChooser = new JFileChooser(); // 实例化文件选择器
+				fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES); // 设置文件选择模式,此处为文件和目录均可
+				fileChooser.setCurrentDirectory(new File(".")); // 设置文件选择器当前目录
+				fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+					public boolean accept(File file) { // 可接受的文件类型
+						String name = file.getName().toLowerCase();
+						return name.endsWith(".wav") || name.endsWith(".au") || file.isDirectory();
+					}
+	
+					public String getDescription() { // 文件描述
+						return "音乐文件(*.wav,*.au)";
+					}
+				});
+				if (fileChooser.showOpenDialog(Alarm.this) == JFileChooser.APPROVE_OPTION) { // 弹出文件选择器,并判断是否点击了打开按钮
+					String fileName = fileChooser.getSelectedFile().getAbsolutePath(); // 得到选择文件或目录的绝对路径
+					music.setText(fileName);
+				}
+			}
+		});
+		
+		queding.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				if(queding.getText().equals("确定")){
+					try{
+						r=Integer.parseInt(RI.getText());
+						h=Integer.parseInt(SHI.getText());
+						f=Integer.parseInt(FEN.getText());
+						m=Integer.parseInt(MIAO.getText());
+						if(1<=h&&h<=31&&0<=h&&h<=23&&0<=f&&f<=59&&0<=m&&m<=59)
+						{
+							fo=true;
+						}
+						else
+							JOptionPane.showMessageDialog(null, "输入时间错误");
+					}
+					catch(Exception e){
+						JOptionPane.showMessageDialog(null, "请输入正确的时间");
+					}
+				}
+				else{
+					fo=false;
+					RI.setEditable(true);
+					SHI.setEditable(true);
+					FEN.setEditable(true);
+					MIAO.setEditable(true);
+					queding.setText("确定");
+					soumd1.stop();
+				}
+			}
+		});
+	}
+	
+	public void StopAlarm()
+	{
+		try{
+			this.soumd1.stop();
+		}
+		catch(Exception e){
+			// do nothing
+		}
+	}
+	
+	public void run() {
+		while (true) {
+			Date now = new Date();
+			dangqian.setText("当前时间: " + now.toString());
+			if(fo){
+				RI.setEditable(false);
+				SHI.setEditable(false);
+				FEN.setEditable(false);
+				MIAO.setEditable(false);
+				queding.setText("关闭");
+				SimpleDateFormat ri=new SimpleDateFormat("dd"); //封装 为了获取日期
+				SimpleDateFormat shi=new SimpleDateFormat("kk"); //封装 为了获取小时
+				SimpleDateFormat fen=new SimpleDateFormat("mm"); //封装 为了获取分钟
+				SimpleDateFormat miao=new SimpleDateFormat("ss"); //封装 为了获取秒钟
+				int riqi=Integer.parseInt(ri.format(now)); //获取日期
+				int shizhong=Integer.parseInt(shi.format(now)); //获取小时
+				int fenzhong=Integer.parseInt(fen.format(now)); //获取分钟
+				int miaozhong=Integer.parseInt(miao.format(now)); //获取秒钟
+				if(riqi==r&&shizhong==h&&fenzhong==f&&miaozhong==m){
+					try {
+						soumd1=Applet.newAudioClip(new File(music.getText()).toURL()); //播放音乐
+						soumd1.loop(); //我设置的是循环播放..这样不起床都不行..
+						fo=false;
+					} 
+					catch (MalformedURLException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {}
+		}
+	}
+}
