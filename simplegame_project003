@@ -1,0 +1,775 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<io.h>
+//#include<conio.h>/*屏幕操作函数*/
+#define MAX 50
+//#define NULL 0
+
+struct user
+{
+    char user_Name[6];
+    char user_Pass[6];
+} stu[1] = { "admin", "admin" };//初始化用户名和对应密码
+
+void print_Passwd(void)
+{
+    int i = 0;//当前账号标记
+    int flag1 = 0;//登录成功标记
+    int flag = 0;//密码正确标记
+    char p[6];//临时用户名
+    char s[6];//临时密码
+    char num = 0;//密码次数
+    char temp;//登陆后改密码
+    printf("请输入登录名：\n");
+    scanf("%s", p);
+    if (strcmp(stu[i].user_Name, p) == 0)
+    {
+        flag = 1;
+    }
+    if (1 == flag)
+    {
+        printf("请输入密码：\n");
+        scanf("%s", s);
+    }
+    else
+    {
+        printf("没有此用户：\n");
+        exit(0);
+    }
+    while (strcmp(stu[i].user_Pass, s) != 0)
+    {
+        printf("密码错误！\n");
+        printf("请重新输入密码：\n");
+        scanf("%s", s);
+    }
+    printf("登录成功！\n");
+    printf("注：你是管理员！\n");
+    //system("pause");
+    printf("按任意键返回主菜单......");
+    //getchar();
+    scanf("%c", &s[0]);
+}
+
+struct Schools{
+    int school;/*院系编号*/
+    int record;/*项目成绩*/
+    struct Schools *next;/*链域*/
+};
+
+typedef struct{
+    int item;/*项目编号*/
+    Schools *firstschool;/*链域指向链表中第一个结点*/
+}ITEM;
+
+typedef struct{
+    int z;/*项目总数*/
+    ITEM a[MAX];
+}ALLitems;
+
+struct Items{
+    int item;/*该院系获奖的项目*/
+    int record;/*项目成绩*/
+    struct Items *next;/*链域*/
+};
+
+typedef struct{
+    int school;/*院系编号*/
+    int score;/*院系总分*/
+    int boys;/*男团体总分*/
+    int girls;/*女团体总分*/
+    Items *firstitem;/*链域指向链表中第一个获奖项目的结点*/
+}SCHNode;
+
+typedef struct{
+    int n;/*院系总分*/
+    SCHNode b[MAX];
+}ALLNode;
+
+typedef struct{
+    int boysCount;
+    int girlsCount;
+    int schoolsCount;
+}SportsBasicInfo;
+
+typedef struct{
+    int projectId;
+    int first;
+    int second;
+    int third;
+}ProjectAwardInfo;
+
+ALLitems *g1;
+ALLNode *g2;
+SportsBasicInfo sportsBasicInfo;
+ProjectAwardInfo * projectAwardInfo;
+
+void save(SportsBasicInfo * sportsBasicInfo, ProjectAwardInfo * projectAwardInfo)
+{
+    FILE *fp1, *fp2;
+    fp1 = (FILE*)malloc(sizeof(FILE));
+    fp2 = (FILE*)malloc(sizeof(FILE));
+    if ((fp1 = fopen("projects.txt", "wb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    if (fwrite(g1, sizeof(ALLitems), 1, fp1) != 1)
+        printf("file weite crror.\n");
+    fclose(fp1);
+    if ((fp2 = fopen("schools.txt", "wb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    if (fwrite(g2, sizeof(ALLNode), 1, fp2) != 1)
+        printf("file weite error.\n");
+    fclose(fp2);
+
+    if ((fp1 = fopen("sportsBasicInfo", "wb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    if (fwrite(sportsBasicInfo, sizeof(SportsBasicInfo), 1, fp1) != 1)
+        printf("file weite crror.\n");
+    fclose(fp1);
+
+    if ((fp2 = fopen("projectAwardInfo", "wb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    if (fwrite(projectAwardInfo, sizeof(ProjectAwardInfo) * (sportsBasicInfo->boysCount + sportsBasicInfo->girlsCount), 1, fp2) != 1)
+        printf("file weite error.\n");
+    fclose(fp2);
+}
+
+void funct1(ALLitems *g1, ALLNode *g2)
+{
+    Schools *p1;
+    Items *p2;
+    int i = 1, j, k, m, w, h, x;
+    p1 = (Schools*)malloc(sizeof(Schools));
+    p2 = (Items*)malloc(sizeof(Items));
+    if (!p1 || !p2)
+        exit(1);
+    printf("\n      ******输入各个项目信息******      \n\n");
+    printf("      输入男子项目总数m：      ");
+    scanf("%d", &m);
+    if (m<0 || m>20)
+    {
+        printf("      输入有误，m是20以内的整数，请重新输入：      ");
+        scanf("%d", &m);
+    }
+    printf("      输入女子项目总数w：      ");
+    scanf("%d", &w);
+    if (w<0 || w>20)
+    {
+        printf("      输入有误，w是20以内的整数，请重新输入：      ");
+        scanf("%d", &w);
+    }
+    printf("      输入参加运动会的院系总数n：      ");
+    scanf("%d", &g2->n);
+    if (g2->n<=0 || g2->n>20)
+    {
+        printf("      输入有误，n是20以内的整数，请重新输入：      ");
+        scanf("%d", &g2->n);
+    }
+    sportsBasicInfo.boysCount = m;
+    sportsBasicInfo.girlsCount = w;
+    sportsBasicInfo.schoolsCount = g2->n;
+    g1->z = m + w;
+    projectAwardInfo = (ProjectAwardInfo*)malloc((g1->z) * sizeof(ProjectAwardInfo));
+
+    printf("      则项目编号为男子1-%d，女子%d-%d", m, m+1, g1->z);
+    printf("\n\n      ******记录运动会成绩******      ");
+    printf("\n\n      （输入0标志结束）\n      ");
+    printf("\t项目1:50米、项目2:100米、项目3:200米、项目4:400米、项目5:500米、\n");
+    printf("\t项目6：跳高、项目7：跳远、项目8：标枪、项目9：铅球、项目10：铁饼\n");
+    for (k = 1; k <= g1->z; k++)
+    {
+        g1->a[k].item = k;
+        g1->a[k].firstschool = NULL;
+    }
+    for (k = 1; k <= g2->n; k++)
+    {
+        g2->b[k].school = k;
+        g2->b[k].firstitem = 0;
+        g2->b[k].score = 0;
+        g2->b[k].boys = 0;
+        g2->b[k].girls = 0;
+    }
+    g2->b[0].score = 0;
+    g2->b[0].boys = 0;
+    g2->b[0].girls = 0;
+
+    int indexOfProjects = 0;
+    int totalProjects = g1->z;
+    while (totalProjects)
+    {
+        printf("\n      项目：      ");
+        scanf("%d", &i);
+        if (i <= 0 || i > g1->z)
+        {
+            printf("输入项目编号错误，项目编号[1 - %d]\n", g1->z);
+            continue;
+        }
+        else
+        {
+            projectAwardInfo[indexOfProjects].projectId = i;
+            printf("      请输入前三名：      \n");
+            h = 3;
+            do{
+                printf("      第%d名：院系（院系编号为数字）", h);
+                scanf("%d", &x);
+                if (x <= 0 || x > g2->n)
+                {
+                    printf("院系编号输入错误,院系编号[1 - %d]\n", g2->n);
+                    continue;
+                }
+                Schools * headOfSchools = g1->a[i].firstschool;
+                bool duplicatedSchools = false;
+                while (headOfSchools)
+                {
+                    if (headOfSchools->school == x)
+                    {
+                        duplicatedSchools = true;
+                        break;
+                    }
+                    headOfSchools = headOfSchools->next;
+                }
+
+                if (duplicatedSchools)
+                {
+                    printf("此项目重复输入院系,请重新输入\n");
+                    continue;
+                }
+
+                p1 = (Schools*)malloc(sizeof(Schools));
+                p1->school = x;
+                p2 = (Items*)malloc(sizeof(Items));
+                p2->item = i;
+                if (h == 3)
+                {
+                    p2->record = p1->record = 2;
+                    projectAwardInfo[indexOfProjects].third = x;
+                }
+                if (h == 2)
+                {
+                    p2->record = p1->record = 5;
+                    projectAwardInfo[indexOfProjects].second = x;
+                }
+                if (h == 1)
+                {
+                    p2->record = p1->record = 10;
+                    projectAwardInfo[indexOfProjects].first = x;
+                }
+                p1->next = g1->a[i].firstschool;
+                g1->a[i].firstschool = p1;
+                p2->next = g2->b[x].firstitem;
+                g2->b[x].firstitem = p2;
+                g2->b[x].score = g2->b[x].score + p2->record;/*累计总分*/
+                if (i <= m)g2->b[x].boys = g2->b[x].boys + p2->record;/*累计男团体总分*/
+                else g2->b[x].girls = g2->b[x].girls + p2->record;/*累计女团体总分*/
+                h--;
+            } while (h != 0);
+            indexOfProjects++;
+        }
+
+        totalProjects--;
+    }
+
+    save(&sportsBasicInfo, projectAwardInfo);
+    free(projectAwardInfo);
+    projectAwardInfo = NULL;
+}
+
+
+void read()
+{
+    SportsBasicInfo * sportsBasicInfo = (SportsBasicInfo *)malloc(sizeof(SportsBasicInfo));
+    FILE *fp1 = NULL;
+    FILE *fp2 = NULL;
+ 
+    if ((fp1 = fopen("sportsBasicInfo", "rb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    if (fread(sportsBasicInfo, sizeof(SportsBasicInfo), 1, fp1) == NULL)
+    {
+        printf("file read error.\n");
+        return;
+    }
+    fclose(fp1);
+
+    g1->z = sportsBasicInfo->boysCount, sportsBasicInfo->girlsCount;
+    g2->n = sportsBasicInfo->schoolsCount;
+
+    if ((fp2 = fopen("projectAwardInfo", "rb")) == NULL)
+    {
+        printf("cannot open file.\n");
+        return;
+    }
+    projectAwardInfo = (ProjectAwardInfo *)malloc(sizeof(ProjectAwardInfo) * (sportsBasicInfo->boysCount + sportsBasicInfo->girlsCount));
+    if (fread(projectAwardInfo, sizeof(ProjectAwardInfo) * (sportsBasicInfo->boysCount + sportsBasicInfo->girlsCount), 1, fp2) == NULL)
+    {
+        printf("file read error.\n");
+        return;
+    }
+    fclose(fp2);
+
+    int k = 0;
+    for (k = 1; k <= g1->z; k++)
+    {
+        g1->a[k].item = k;
+        g1->a[k].firstschool = NULL;
+    }
+    for (k = 1; k <= g2->n; k++)
+    {
+        g2->b[k].school = k;
+        g2->b[k].firstitem = 0;
+        g2->b[k].score = 0;
+        g2->b[k].boys = 0;
+        g2->b[k].girls = 0;
+    }
+    g2->b[0].score = 0;
+    g2->b[0].boys = 0;
+    g2->b[0].girls = 0;
+
+    Schools *p1;
+    Items *p2;
+
+    for (k = 0; k < (sportsBasicInfo->boysCount + sportsBasicInfo->girlsCount); k++)
+    {
+        p1 = (Schools*)malloc(sizeof(Schools));
+        p1->school = projectAwardInfo[k].third;
+        p2 = (Items*)malloc(sizeof(Items));
+        p2->item = projectAwardInfo[k].projectId;
+        p2->record = p1->record = 2;
+
+        p1->next = g1->a[projectAwardInfo[k].projectId].firstschool;
+        g1->a[projectAwardInfo[k].projectId].firstschool = p1;
+        p2->next = g2->b[projectAwardInfo[k].third].firstitem;
+        g2->b[projectAwardInfo[k].third].firstitem = p2;
+        g2->b[projectAwardInfo[k].third].score = g2->b[projectAwardInfo[k].third].score + p2->record;/*累计总分*/
+        if (projectAwardInfo[k].projectId <= sportsBasicInfo->boysCount) g2->b[projectAwardInfo[k].third].boys = g2->b[projectAwardInfo[k].third].boys + p2->record;/*累计男团体总分*/
+        else g2->b[projectAwardInfo[k].third].girls = g2->b[projectAwardInfo[k].third].girls + p2->record;/*累计女团体总分*/
+
+        p1 = (Schools*)malloc(sizeof(Schools));
+        p1->school = projectAwardInfo[k].second;
+        p2 = (Items*)malloc(sizeof(Items));
+        p2->item = projectAwardInfo[k].projectId;
+        p2->record = p1->record = 5;
+
+        p1->next = g1->a[projectAwardInfo[k].projectId].firstschool;
+        g1->a[projectAwardInfo[k].projectId].firstschool = p1;
+        p2->next = g2->b[projectAwardInfo[k].second].firstitem;
+        g2->b[projectAwardInfo[k].second].firstitem = p2;
+        g2->b[projectAwardInfo[k].second].score = g2->b[projectAwardInfo[k].second].score + p2->record;/*累计总分*/
+        if (projectAwardInfo[k].projectId <= sportsBasicInfo->boysCount) g2->b[projectAwardInfo[k].second].boys = g2->b[projectAwardInfo[k].second].boys + p2->record;/*累计男团体总分*/
+        else g2->b[projectAwardInfo[k].second].girls = g2->b[projectAwardInfo[k].second].girls + p2->record;/*累计女团体总分*/
+
+        p1 = (Schools*)malloc(sizeof(Schools));
+        p1->school = projectAwardInfo[k].first;
+        p2 = (Items*)malloc(sizeof(Items));
+        p2->item = projectAwardInfo[k].projectId;
+        p2->record = p1->record = 10;
+
+        p1->next = g1->a[projectAwardInfo[k].projectId].firstschool;
+        g1->a[projectAwardInfo[k].projectId].firstschool = p1;
+        p2->next = g2->b[projectAwardInfo[k].first].firstitem;
+        g2->b[projectAwardInfo[k].first].firstitem = p2;
+        g2->b[projectAwardInfo[k].first].score = g2->b[projectAwardInfo[k].first].score + p2->record;/*累计总分*/
+        if (projectAwardInfo[k].projectId <= sportsBasicInfo->boysCount) g2->b[projectAwardInfo[k].first].boys = g2->b[projectAwardInfo[k].first].boys + p2->record;/*累计男团体总分*/
+        else g2->b[projectAwardInfo[k].first].girls = g2->b[projectAwardInfo[k].first].girls + p2->record;/*累计女团体总分*/
+    }
+
+    free(sportsBasicInfo);
+    sportsBasicInfo = NULL;
+}
+
+void funct2(ALLNode*g2)
+{
+    int k;
+    printf("\n\n                 ******输出各院总分******\n");
+    printf("                   院系编号\t    总分     \n");
+    for (k = 1; k <= g2->n; k++)
+        printf("                     %d\t\t\t%d\n", k, g2->b[k].score);
+    system("pause");
+    printf("                      按任意键返回主菜单......");
+    getchar();
+}
+void funct3(ALLNode*g2)               /*按院系编号排序输出*/
+{
+    int k;
+    Items*p2;
+    p2 = (Items*)malloc(sizeof(Items));
+    printf("\n\n               ******按院系编号排序输出******\n");
+    printf("                   院系编号\t\t\t获奖情况   \n");
+    //scanf("%d", &k);
+    for (k = 1; k <= g2->n; k++)
+    {
+        printf("\t\t%d\t", k);
+        p2 = g2->b[k].firstitem;
+        while (p2 != NULL)
+        {
+            printf("\t\t项目%d:得%d分", p2->item, p2->record);
+            p2 = p2->next;
+        }
+        printf("\n");
+    }
+    printf("\n");
+    system("pause");
+    printf("按任意键返回主菜单......");
+    getchar();
+}
+void funct4(ALLNode*g2)/*按院系总分排序输出*/
+{
+    int i, j, k;
+    Items*p2;
+    printf("\n\n          ******按院系总分排序输出*******\n");
+    printf("  院系编号\t\t总分     \n");
+
+
+    SCHNode * temp = (SCHNode *)malloc(sizeof(SCHNode) * (g2->n));
+    int tmpI = 0;
+    for (tmpI = 0; tmpI < g2->n; tmpI++)
+    {
+        temp[tmpI].school = g2->b[tmpI + 1].school;
+        temp[tmpI].score = g2->b[tmpI + 1].score;
+    }
+
+    int minScore = 0;
+    int minIndex = 0;
+    int tmpJ = 0;
+    for (tmpI = 0; tmpI < g2->n; tmpI++)
+    {
+        minScore = temp[tmpI].score;
+        minIndex = tmpI;
+        for (tmpJ = tmpI + 1; tmpJ < g2->n; tmpJ++)
+        {
+            if (temp[tmpJ].score < minScore)
+            {
+                minIndex = tmpJ;
+                minScore = temp[tmpJ].score;
+            }
+        }
+        
+        if (minIndex != tmpI)
+        {
+            int tmpSchool = temp[minIndex].school;
+            int tmpScore = temp[minIndex].score;
+            temp[minIndex].school = temp[tmpI].school;
+            temp[minIndex].score = temp[tmpI].score;
+            temp[tmpI].school = tmpSchool;
+            temp[tmpI].score = tmpScore;
+        }
+    }
+
+    for (k = 0; k < g2->n; k++)
+    {
+        printf("%d\t\t%d\n", temp[k].school, temp[k].score);
+    }
+
+    free(temp);
+    temp = NULL;
+    
+    system("pause");
+    printf("按任意键返回主菜单.....");
+    getchar();
+}
+    void funct5(ALLNode* g2)
+    {
+        int i, j, k;
+        Items*p2;
+        p2 = (Items*)malloc(sizeof(Items));
+        printf("\n\n                ******按男团体总分排序输出******\n");
+        printf("院系编号\t\t男团体总分      \n");
+ 
+        SCHNode * temp = (SCHNode *)malloc(sizeof(SCHNode) * (g2->n));
+        int tmpI = 0;
+        for (tmpI = 0; tmpI < g2->n; tmpI++)
+        {
+            temp[tmpI].school = g2->b[tmpI + 1].school;
+            temp[tmpI].boys = g2->b[tmpI + 1].boys;
+        }
+
+        int minScore = 0;
+        int minIndex = 0;
+        int tmpJ = 0;
+        for (tmpI = 0; tmpI < g2->n; tmpI++)
+        {
+            minScore = temp[tmpI].boys;
+            minIndex = tmpI;
+            for (tmpJ = tmpI + 1; tmpJ < g2->n; tmpJ++)
+            {
+                if (temp[tmpJ].boys < minScore)
+                {
+                    minIndex = tmpJ;
+                    minScore = temp[tmpJ].boys;
+                }
+            }
+
+            if (minIndex != tmpI)
+            {
+                int tmpSchool = temp[minIndex].school;
+                int tmpScore = temp[minIndex].boys;
+                temp[minIndex].school = temp[tmpI].school;
+                temp[minIndex].boys = temp[tmpI].boys;
+                temp[tmpI].school = tmpSchool;
+                temp[tmpI].boys = tmpScore;
+            }
+        }
+
+        for (k = 0; k < g2->n; k++)
+        {
+            printf("%d\t\t%d\n", temp[k].school, temp[k].boys);
+        }
+
+        free(temp);
+        temp = NULL;
+
+        system("pause");       //暂停等待
+        printf("按任意键返回主菜单........");
+        getchar();
+    }
+    void funct6(ALLNode*g2)/*按女团体总分排序输出*/
+    {
+        int i, j, k;
+        printf("\n\n                ******按女团体总分排序输出******\n");
+        printf("院系编号\t\t女团体总分      \n");
+        
+        SCHNode * temp = (SCHNode *)malloc(sizeof(SCHNode) * (g2->n));
+        int tmpI = 0;
+        for (tmpI = 0; tmpI < g2->n; tmpI++)
+        {
+            temp[tmpI].school = g2->b[tmpI + 1].school;
+            temp[tmpI].girls = g2->b[tmpI + 1].girls;
+        }
+
+        int minScore = 0;
+        int minIndex = 0;
+        int tmpJ = 0;
+        for (tmpI = 0; tmpI < g2->n; tmpI++)
+        {
+            minScore = temp[tmpI].girls;
+            minIndex = tmpI;
+            for (tmpJ = tmpI + 1; tmpJ < g2->n; tmpJ++)
+            {
+                if (temp[tmpJ].girls < minScore)
+                {
+                    minIndex = tmpJ;
+                    minScore = temp[tmpJ].girls;
+                }
+            }
+
+            if (minIndex != tmpI)
+            {
+                int tmpSchool = temp[minIndex].school;
+                int tmpScore = temp[minIndex].girls;
+                temp[minIndex].school = temp[tmpI].school;
+                temp[minIndex].girls = temp[tmpI].girls;
+                temp[tmpI].school = tmpSchool;
+                temp[tmpI].girls = tmpScore;
+            }
+        }
+
+        for (k = 0; k < g2->n; k++)
+        {
+            printf("%d\t\t%d\n", temp[k].school, temp[k].girls);
+        }
+
+        free(temp);
+        temp = NULL;
+
+        system("pause");       //暂停等待
+        printf("按任意键返回主菜单........");
+        getchar();
+    }
+    void funct7(ALLNode*g2)     /*按院系编号查询院系某个项目情况*/
+    {
+        int i, j;
+        Items*p2;
+        printf("\n      ******按院系编号查询院系某个项目情况******\n");
+        printf("                  输入要查询的院系编号：");
+        scanf("%d", &i);
+        if (i <= 0 || i > g2->n)
+        {
+            printf("输入的院系编号错误...\n");
+            system("pause");       //暂停等待
+            getchar();
+            return;
+        }
+        printf("\t项目1:50米、项目2:100米、项目3:200米、项目4:400米、项目5:1500米、\n");
+        printf("\t项目6：跳高、项目7：跳远、项目8：标枪、项目9：铅球、项目10：铁饼\n");
+        printf("                   输入要查询的项目编号：");
+        scanf("%d", &j);
+        if (j <= 0 || j > g1->z)
+        {
+            printf("输入的项目编号错误...\n");
+            system("pause");       //暂停等待
+            getchar();
+            return;
+        }
+        p2 = g2->b[i].firstitem;
+        while (p2 != NULL)
+        {
+            if (p2->item == j)
+                printf("                院系编号：%d\t项目%d:得%d分\n", i, p2->item, p2->record);
+            p2 = p2->next;
+        }
+        printf("\n");
+        system("pause");
+        printf("                  按任意键返回主菜单..........");
+        getchar();
+    }
+    void funct8(ALLitems*g1)   /*按项目编号查询取得名次的院系*/
+    {
+        int i;
+        Schools*p1;
+        printf("\n***按项目编号查询取得名次的院系***\n");
+        printf("输入要查询的项目编号");
+        scanf("%d", &i);
+        if (i <= 0 || i > g1->z)
+        {
+            printf("输入的项目编号错误...\n");
+            system("pause");       //暂停等待
+            getchar();
+            return;
+        }
+        printf("项目编号\t\t\t取得名次的院系\n");
+        printf("%d\t", i);
+        p1 = g1->a[i].firstschool;
+        while (p1 != NULL)
+        {
+            printf(" 院系%d得%d分  ", p1->school, p1->record);
+            p1 = p1->next;
+        }
+        printf("\n\n");
+        system("pause");
+        printf("按任意键返回主菜单........");
+        getchar();
+    }
+    int main()
+    {
+        int temp;
+        printf("管理员请按1，普通用户请按2\n");
+        scanf("%d", &temp);
+        if (1 == temp)
+        {
+            int t;
+            void print_Passwd(void);
+            while (1)
+            {
+                print_Passwd();
+                break;
+            }
+            g2 = (ALLNode*)malloc(sizeof(ALLNode));
+            g1 = (ALLitems*)malloc(sizeof(ALLitems));
+            if (!g2 || !g1)
+                exit(1);
+            //textcolor(WHITE);
+            //textbackgroung(BLUE);
+            //clrscr();
+            system("cls");
+            for (;;)
+            {
+                printf("\t\t********************************\n");
+                printf("\t\t         运动会分数统计系统           \n");
+                printf("\t\t********************************\n");
+                printf("\t\t*    1.输入各个项目成绩并存储文件       *\t      \n");
+                printf("\t\t*    2.统计各院系总分                   *\t      \n");
+                printf("\t\t*    3.按院系编号排序输出               *\t      \n");
+                printf("\t\t*    4.按院系总分排序输出               *\t      \n");
+                printf("\t\t*    5.按男团体总分排序输出             *\t      \n");
+                printf("\t\t*    6.按女团体总分排序输出             *\t      \n");
+                printf("\t\t*    7.按院系编号查询院系某个项目情况   *\t      \n");
+                printf("\t\t*    8.按项目编号查询取得名次的院系     *\n");
+                printf("\t\t*    0.退出                             *\n");
+                printf("\t\t************************************\n");
+                printf("\t\t                                         \n");
+                printf("\t\t                                         \n");
+                printf("\t\t                                         \n");
+                printf("\t\t               请选择（0-8）：");
+            loop1:scanf("%d", &t);
+                system("cls");
+                switch (t)
+                {
+                case 1:funct1(g1, g2); break;
+                case 2:read(); funct2(g2); break;
+                case 3:read(); funct3(g2); break;
+                case 4:read(); funct4(g2); break;
+                case 5:read(); funct5(g2); break;
+                case 6:read(); funct6(g2); break;
+                case 7:read(); funct7(g2); break;
+                case 8:read(); funct8(g1); break;
+                case 0:exit(0);
+                default:{
+                    printf("输入有误，请重新选择：");
+                    goto loop1;
+                }
+                }//clrscr();
+                system("cls");
+            }
+        }
+        else
+        {
+            int u;
+            g2 = (ALLNode*)malloc(sizeof(ALLNode));
+            g1 = (ALLitems*)malloc(sizeof(ALLitems));
+            if (!g2 || !g1)
+                exit(1);
+            system("cls");
+            for (;;)
+            {
+                printf("\t\t********************************\n");
+                printf("\t\t         运动会分数统计系统           \n");
+                printf("\t\t********************************\n");
+                printf("\t\t*       1.统计各院系总分                  *\t    \n");
+                printf("\t\t*       2.按院系编号排序输出              *\t    \n");
+                printf("\t\t*       3.按院系总分排序输出              *\t    \n");
+                printf("\t\t*       4.按院系编号查询学校某个项目情况  *\t    \n");
+                printf("\t\t*       5.按项目编号查询取得名次的院系    *\n");
+                printf("\t\t*       0.退出                            *\n");
+                printf("\t\t************************************\n");
+                printf("\t\t                                         \n");
+                printf("\t\t                                         \n");
+                printf("\t\t                                         \n");
+                printf("\t\t               请选择（0-5）：");
+            loop2:scanf("%d", &u);
+                system("cls");
+                switch (u)
+                {
+                case 1:read(); funct2(g2); break;
+                case 2:read(); funct3(g2); break;
+                case 3:read(); funct4(g2); break;
+                case 4:read(); funct7(g2); break;
+                case 5:read(); funct8(g1); break;
+                case 0:exit(0);
+                default:{printf("输入有误，请重新选择：");
+                    goto loop2; }
+                }//clrs();
+                system("cls");
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
